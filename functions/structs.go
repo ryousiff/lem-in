@@ -1,32 +1,33 @@
 package lem
 
 type Room struct {
-	Name     string
-	NextRoom *Room
-	CoordX   string
-	CoordY   string
-	Visited  bool
-	IsEnd    bool
-	IsStart  bool
+    Name     string
+    CoordX   string
+    CoordY   string
+    Visited  bool
+    IsEnd    bool
+    IsStart  bool
+    Links    []*Link
 }
 
 type Ant struct {
-	ID string
+    ID int
 }
 
 type Farm struct {
-	PathLen int
-	RoomNum int
-	Rooms   []*Room
-	Ants    []*Ant
-	Links   []*Link
-	NumAnt   int
-	StartRoom *Room
-	EndRoom *Room
+    Rooms        []*Room
+    Ants         []*Ant
+    Links        []*Link
+    NumAnt       int
+    StartRoom    *Room
+    EndRoom      *Room
+    AntPositions map[int]*Room
 }
 
 type Link struct {
-	RoomName string
-	Dash string
-	NextRoomId string
+    Room1 *Room
+    Room2 *Room
 }
+
+//next room have to have ##start each next room
+//return the error in read file

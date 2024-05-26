@@ -1,3 +1,3 @@
-module lemin
+module lem
 
 go 1.20
