@@ -63,28 +63,40 @@ func File(file string) *Farm {
 }
 
 func handleSingleField(farm *Farm, line string, lineNum int) {
-	switch line {
-	case "##start":
-		if lineNum < len(farm.Rooms) {
-			farm.StartRoom = farm.Rooms[lineNum-1]
-			farm.StartRoom.IsStart = true
-		} else {
-			fmt.Printf("Start room not found on line %d: %s\n", lineNum, line)
-		}
-	case "##end":
-		if lineNum < len(farm.Rooms) {
-			farm.EndRoom = farm.Rooms[lineNum]
-			farm.EndRoom.IsEnd = true
-		} else {
-			fmt.Printf("End room not found on line %d: %s\n", lineNum, line)
-		}
-	default:
-		link := NewLink(line, lineNum, farm)
-		if link != nil {
-			farm.Links = append(farm.Links, link)
-		}
-	}
+    switch line {
+    case "##start":
+        if lineNum < len(farm.Rooms) {
+            farm.StartRoom = farm.Rooms[lineNum-1]
+            farm.StartRoom.IsStart = true
+        } else {
+            fmt.Printf("Start room not found on line %d: %s\n", lineNum, line)
+        }
+    case "##end":
+        if lineNum < len(farm.Rooms) {
+            farm.EndRoom = farm.Rooms[lineNum]
+            farm.EndRoom.IsEnd = true
+        } else {
+            fmt.Printf("End room not found on line %d: %s\n", lineNum, line)
+        }
+    default:
+        link := NewLink(line, lineNum, farm)
+        if link != nil {
+            farm.Links = append(farm.Links, link)
+
+            // Update the StartRoom and IsStart flag for the next room
+            if link.Room2.IsStart {
+                farm.StartRoom = link.Room1
+                link.Room1.IsStart = true
+                link.Room2.IsStart = false
+            } else {
+                farm.StartRoom = link.Room2
+                link.Room2.IsStart = true
+                link.Room1.IsStart = false
+            }
+        }
+    }
 }
+
 
 func NewRoom(line string, lineNum int) *Room {
 	fields := strings.Fields(line)
@@ -98,10 +110,10 @@ func NewRoom(line string, lineNum int) *Room {
 	coordY := fields[2]
 
 	// Validate room name
-	if strings.HasPrefix(name, "L") || strings.HasPrefix(name, "#") || strings.Contains(name, " ") {
-		fmt.Printf("Invalid room name on line %d: %s\n", lineNum, line)
-		return nil
-	}
+	// if strings.HasPrefix(name, "L") || strings.HasPrefix(name, "#") || strings.Contains(name, " ") {
+	// 	fmt.Printf("Invalid room name on line %d: %s\n", lineNum, line)
+	// 	return nil
+	// }
 
 	// Validate coordinates
 	_, errX := strconv.Atoi(coordX)
