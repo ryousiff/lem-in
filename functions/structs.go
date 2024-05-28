@@ -37,3 +37,5 @@ type Link struct {
 type Path struct {
     Rooms []*Room
 }
+
+//paths must be same number as links from the start
