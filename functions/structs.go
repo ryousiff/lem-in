@@ -8,6 +8,8 @@ type Room struct {
     IsEnd    bool
     IsStart  bool
     Links    []*Link
+    Neighbors []*Room
+    LineNum  int // Added LineNum field
 }
 
 type Ant struct {
@@ -22,6 +24,9 @@ type Farm struct {
     StartRoom    *Room
     EndRoom      *Room
     AntPositions map[int]*Room
+    Paths        []*Path
+    StartRoomLine int
+    EndRoomLine   int
 }
 
 type Link struct {
@@ -29,5 +34,6 @@ type Link struct {
     Room2 *Room
 }
 
-//next room have to have ##start each next room
-//return the error in read file
+type Path struct {
+    Rooms []*Room
+}
