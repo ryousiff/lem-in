@@ -23,7 +23,7 @@ type Farm struct {
 	NumAnt        int
 	StartRoom     *Room
 	EndRoom       *Room
-	AntPositions  map[int]*Room
+	AntPositions  map[int]*Room //track the ant which ant in which room 
 	Paths         []*Path
 	StartRoomLine int
 	EndRoomLine   int
@@ -36,6 +36,7 @@ type Link struct {
 
 type Path struct {
 	Rooms []*Room
+	Shortest []Path
 }
 
 //paths must be same number as links from the start

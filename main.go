@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 	lem "lem/functions"
+	"os"
 )
 
 func main() {
@@ -54,6 +54,18 @@ func main() {
 	fmt.Println("Paths found:")
 	for i, path := range paths {
 		fmt.Printf("Path %d: ", i+1)
+		for j, room := range path.Rooms {
+			if j > 0 {
+				fmt.Print(" -> ")
+			}
+			fmt.Print(room.Name)
+		}
+		fmt.Println()
+	}
+	// find the Shortest paths
+	resultPath := lem.ShortestPathsFromNeighbors(*farm)
+	for i, path := range resultPath.Shortest {
+		fmt.Print("Shortest paths ", i+1, ": ")
 		for j, room := range path.Rooms {
 			if j > 0 {
 				fmt.Print(" -> ")
