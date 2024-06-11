@@ -41,3 +41,7 @@ type Path struct {
 
 //paths must be same number as links from the start
 //filter the shortest path
+
+
+//error handling when ants = 0
+//make the ants and move them 
