@@ -32,7 +32,7 @@ func main() {
     optimalPaths := lem.ChooseOptimalPaths(paths, farm.StartRoom)
 
     // Print the optimal paths found
-    fmt.Println("Paths:")
+    fmt.Println("Optimal Paths:")
     for _, path := range optimalPaths {
         fmt.Print("path: ")
         for j, room := range path.Rooms {

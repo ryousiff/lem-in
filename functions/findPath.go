@@ -1,6 +1,9 @@
 package lem
 
-import "math"
+import (
+    "fmt"
+    "math"
+)
 
 func Edmonds(farm *Farm) []*Path {
     start := []*Room{farm.StartRoom}
@@ -34,16 +37,48 @@ func Edmonds(farm *Farm) []*Path {
         }
     }
 
+    // Debugging: Print all paths found
+    fmt.Println("All Paths Found by Edmonds:")
+    for _, path := range paths {
+        fmt.Print("path: ")
+        for j, room := range path.Rooms {
+            if j > 0 {
+                fmt.Print(" -> ")
+            }
+            fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
+        }
+        fmt.Println()
+    }
+
     return paths
 }
 
 func ChooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
+    // Remove redundant paths
+    paths = RemoveParents(paths)
+
     // Group paths by their second room
     groups := make(map[*Room][]*Path)
     for _, path := range paths {
         if len(path.Rooms) > 1 {
             secondRoom := path.Rooms[1]
             groups[secondRoom] = append(groups[secondRoom], path)
+        }
+    }
+
+    // Debugging: Print groups of paths
+    fmt.Println("Groups of Paths by Second Room:")
+    for room, group := range groups {
+        fmt.Printf("Room: %s\n", room.Name)
+        for _, path := range group {
+            fmt.Print("  path: ")
+            for j, room := range path.Rooms {
+                if j > 0 {
+                    fmt.Print(" -> ")
+                }
+                fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
+            }
+            fmt.Println()
         }
     }
 
@@ -112,7 +147,44 @@ func ChooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
         filteredPaths = append(filteredPaths, selectedPath)
     }
 
+    // Debugging: Print filtered paths
+    fmt.Println("Filtered Optimal Paths:")
+    for _, path := range filteredPaths {
+        fmt.Print("path: ")
+        for j, room := range path.Rooms {
+            if j > 0 {
+                fmt.Print(" -> ")
+            }
+            fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
+        }
+        fmt.Println()
+    }
+
     return filteredPaths
+}
+
+func RemoveParents(paths []*Path) []*Path {
+    for i := 0; i < len(paths); i++ {
+        for j := i + 1; j < len(paths); j++ {
+            if len(paths[i].Rooms) != 2 && numOfSameRooms(paths[i].Rooms, paths[j].Rooms) == len(paths[i].Rooms) {
+                paths = append(paths[:j], paths[j+1:]...)
+                j--
+            }
+        }
+    }
+    return paths
+}
+
+func numOfSameRooms(route1, route2 []*Room) int {
+    count := 0
+    for _, room1 := range route1 {
+        for _, room2 := range route2 {
+            if room1 == room2 {
+                count++
+            }
+        }
+    }
+    return count
 }
 
 func hasSharedRooms(path1, path2 *Path) bool {
