@@ -20,34 +20,6 @@ func main() {
         return
     }
 
-    // Print the number of ants
-    fmt.Printf("Number of ants: %d\n", farm.NumAnt)
-
-    // Print the rooms and their links
-    fmt.Println("Rooms:")
-    for _, room := range farm.Rooms {
-        fmt.Printf("  %s (%s, %s) - Start: %t, End: %t\n", room.Name, room.CoordX, room.CoordY, room.IsStart, room.IsEnd)
-        fmt.Print("    Links: ")
-        for i, link := range room.Links {
-            if i > 0 {
-                fmt.Print(", ")
-            }
-            fmt.Printf("%s-%s", link.Room1.Name, link.Room2.Name)
-        }
-        fmt.Println()
-    }
-
-    // Build the neighbors list for each room based on links
-    for _, room := range farm.Rooms {
-        for _, link := range room.Links {
-            if link.Room1 == room {
-                room.Neighbors = append(room.Neighbors, link.Room2)
-            } else {
-                room.Neighbors = append(room.Neighbors, link.Room1)
-            }
-        }
-    }
-
     // Find paths from the start room to the end room using Edmonds algorithm
     paths := lem.Edmonds(farm)
 
@@ -56,15 +28,18 @@ func main() {
         return len(paths[i].Rooms) < len(paths[j].Rooms)
     })
 
-    // Print the quickest paths found
-    fmt.Println("Quickest paths found:")
-    for i, path := range paths {
-        fmt.Printf("Path %d: ", i+1)
+    // Choose the optimal paths using the ChooseOptimalPaths function
+    optimalPaths := lem.ChooseOptimalPaths(paths, farm.StartRoom)
+
+    // Print the optimal paths found
+    fmt.Println("Paths:")
+    for _, path := range optimalPaths {
+        fmt.Print("path: ")
         for j, room := range path.Rooms {
             if j > 0 {
                 fmt.Print(" -> ")
             }
-            fmt.Print(room.Name)
+            fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
         }
         fmt.Println()
     }

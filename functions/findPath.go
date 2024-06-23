@@ -37,8 +37,7 @@ func Edmonds(farm *Farm) []*Path {
     return paths
 }
 
-
-func chooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
+func ChooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
     // Group paths by their second room
     groups := make(map[*Room][]*Path)
     for _, path := range paths {
