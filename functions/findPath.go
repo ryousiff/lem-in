@@ -2,31 +2,34 @@ package lem
 
 import "math"
 
-func FindPath(farm Farm) []Path {
+func Edmonds(farm *Farm) []*Path {
     start := []*Room{farm.StartRoom}
-    return findAllPaths(farm, start, make(map[*Room]bool))
-}
+    end := farm.EndRoom
+    queue := []*Path{{Rooms: start}}
+    var paths []*Path
 
-func findAllPaths(farm Farm, path []*Room, visited map[*Room]bool) []Path {
-    var paths []Path
-    lastRoom := path[len(path)-1]
-    visited[lastRoom] = true
+    for len(queue) > 0 {
+        path := queue[0]
+        queue = queue[1:]
+        currentRoom := path.Rooms[len(path.Rooms)-1]
 
-    if roomsEqual(*lastRoom, *farm.EndRoom) {
-        pathCopy := make([]*Room, len(path))
-        copy(pathCopy, path)
-        paths = append(paths, Path{Rooms: pathCopy})
-    } else {
-        for _, nextRoom := range lastRoom.Neighbors {
-            if !visited[nextRoom] && !roomsEqual(*nextRoom, *farm.StartRoom) {
-                newPath := make([]*Room, len(path)+1)
-                copy(newPath, path)
-                newPath[len(path)] = nextRoom
-                newVisited := make(map[*Room]bool)
-                for room, visited := range visited {
-                    newVisited[room] = visited
-                }
-                paths = append(paths, findAllPaths(farm, newPath, newVisited)...)
+        if currentRoom == end {
+            newPath := &Path{Rooms: make([]*Room, len(path.Rooms))}
+            copy(newPath.Rooms, path.Rooms)
+            paths = append(paths, newPath)
+            continue
+        }
+
+        for _, link := range currentRoom.Links {
+            nextRoom := link.Room2
+            if nextRoom == currentRoom {
+                nextRoom = link.Room1
+            }
+            if !containsRoom(path.Rooms, nextRoom) {
+                newPath := &Path{Rooms: make([]*Room, len(path.Rooms), len(path.Rooms)+1)}
+                copy(newPath.Rooms, path.Rooms)
+                newPath.Rooms = append(newPath.Rooms, nextRoom)
+                queue = append(queue, newPath)
             }
         }
     }
@@ -35,88 +38,117 @@ func findAllPaths(farm Farm, path []*Room, visited map[*Room]bool) []Path {
 }
 
 
-
-func roomsEqual(r1, r2 Room) bool {
-    return r1.Name == r2.Name && r1.CoordX == r2.CoordX && r1.CoordY == r2.CoordY
-}
-
-func ShortestPathsFromNeighbors(farm Farm) Path {
-    shortestPaths := []Path{}
-
-    for _, link := range farm.StartRoom.Links {
-        neighbor := link.Room1
-        if link.Room1 == farm.StartRoom {
-            neighbor = link.Room2
+func chooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
+    // Group paths by their second room
+    groups := make(map[*Room][]*Path)
+    for _, path := range paths {
+        if len(path.Rooms) > 1 {
+            secondRoom := path.Rooms[1]
+            groups[secondRoom] = append(groups[secondRoom], path)
         }
+    }
 
-        allPaths := findAllPaths(farm, []*Room{neighbor}, make(map[*Room]bool))
+    // Find the optimal path for each group
+    var optimalPaths []*Path
+    for _, pathsInGroup := range groups {
+        minSharedRooms := math.MaxFloat64
+        minPathLength := math.MaxFloat64
+        var optimalPath *Path
 
-        var shortestPath Path
-        minLength := math.MaxInt32
-        for _, path := range allPaths {
-            bottlenecks := countBottlenecks(path.Rooms)
-            pathLength := len(path.Rooms)
-            if bottlenecks == 0 && pathLength < minLength && isUnique(shortestPaths, path) {
-                minLength = pathLength
-                shortestPath = path
+        for _, path := range pathsInGroup {
+            sharedRooms := 0.0
+            for _, otherPaths := range groups {
+                if &otherPaths != &pathsInGroup {
+                    for _, otherPath := range otherPaths {
+                        if hasSharedRooms(path, otherPath) {
+                            sharedRooms++
+                            break
+                        }
+                    }
+                }
+            }
+
+            pathLength := float64(len(path.Rooms))
+
+            if sharedRooms < minSharedRooms || (sharedRooms == minSharedRooms && pathLength < minPathLength) {
+                minSharedRooms = sharedRooms
+                minPathLength = pathLength
+                optimalPath = path
             }
         }
 
-        if shortestPath.Rooms != nil {
-            shortestPath.Rooms = append([]*Room{farm.StartRoom}, shortestPath.Rooms...)
-            if len(shortestPaths) > 0 && equalPaths(shortestPaths[len(shortestPaths)-1].Rooms, shortestPath.Rooms) {
-                continue
+        optimalPaths = append(optimalPaths, optimalPath)
+    }
+
+    // Filter optimalPaths to choose one path that has the shortest length between paths that have shared rooms with other paths in other groups
+    var filteredPaths []*Path
+    for _, path := range optimalPaths {
+        hasSharedRoomsWithOthers := false
+        for _, otherPath := range optimalPaths {
+            if path != otherPath && hasSharedRooms(path, otherPath) {
+                hasSharedRoomsWithOthers = true
+                break
             }
-            shortestPaths = append(shortestPaths, shortestPath)
+        }
+
+        if !hasSharedRoomsWithOthers {
+            filteredPaths = append(filteredPaths, path)
         }
     }
 
-    return Path{
-        Rooms:    []*Room{farm.StartRoom},
-        Shortest: shortestPaths,
+    if len(filteredPaths) < len(optimalPaths) {
+        minPathLength := math.Inf(1)
+        var selectedPath *Path
+
+        for _, path := range optimalPaths {
+            if !contains(filteredPaths, path) {
+                pathLength := float64(len(path.Rooms))
+                if pathLength < minPathLength {
+                    minPathLength = pathLength
+                    selectedPath = path
+                }
+            }
+        }
+
+        filteredPaths = append(filteredPaths, selectedPath)
     }
+
+    return filteredPaths
 }
 
-
-
-
-
-func countBottlenecks(rooms []*Room) int {
-    bottlenecks := 0
-    visited := make(map[*Room]bool)
-
-    for _, room := range rooms {
-        if room.IsStart || room.IsEnd {
-            continue
-        }
-
-        if visited[room] {
-            bottlenecks++
-        } else {
-            visited[room] = true
+func hasSharedRooms(path1, path2 *Path) bool {
+    rooms1 := make(map[*Room]bool)
+    for _, room := range path1.Rooms {
+        if room != path1.Rooms[0] && room != path1.Rooms[len(path1.Rooms)-1] {
+            rooms1[room] = true
         }
     }
 
-    return bottlenecks
+    for _, room := range path2.Rooms {
+        if room != path2.Rooms[0] && room != path2.Rooms[len(path2.Rooms)-1] {
+            if rooms1[room] {
+                return true
+            }
+        }
+    }
+
+    return false
 }
 
-func isUnique(paths []Path, path Path) bool {
+func contains(paths []*Path, path *Path) bool {
     for _, p := range paths {
-        if equalPaths(p.Rooms, path.Rooms) {
-            return false
+        if p == path {
+            return true
         }
     }
-    return true
+    return false
 }
 
-func equalPaths(path1, path2 []*Room) bool {
-    if len(path1) != len(path2) {
-        return false
-    }
-    for i := range path1 {
-        if !roomsEqual(*path1[i], *path2[i]) {
-            return false
+func containsRoom(rooms []*Room, room *Room) bool {
+    for _, r := range rooms {
+        if r == room {
+            return true
         }
     }
-    return true
+    return false
 }

@@ -1,47 +1,44 @@
 package lem
 
 type Room struct {
-	Name      string
-	CoordX    string
-	CoordY    string
-	Visited   bool
-	IsEnd     bool
-	IsStart   bool
-	Links     []*Link
-	Neighbors []*Room
-	LineNum   int // Added LineNum field
+    Name      string
+    CoordX    string
+    CoordY    string
+    Visited   bool
+    IsEnd     bool
+    IsStart   bool
+    Links     []*Link
+    Neighbors []*Room
+    LineNum   int
 }
 
 type Ant struct {
-	ID int
+    ID          int
+    Path        *Path
+    CurrentRoom *Room
 }
 
 type Farm struct {
-	Rooms         []*Room
-	Ants          []*Ant
-	Links         []*Link
-	NumAnt        int
-	StartRoom     *Room
-	EndRoom       *Room
-	AntPositions  map[int]*Room //track the ant which ant in which room 
-	Paths         []*Path
-	StartRoomLine int
-	EndRoomLine   int
+    Rooms         []*Room
+    Ants          []*Ant
+    Links         []*Link
+    NumAnt        int
+    StartRoom     *Room
+    EndRoom       *Room
+    AntPositions  map[int]*Room
+    Paths         []Path
+    StartRoomLine int
+    EndRoomLine   int
 }
 
 type Link struct {
-	Room1 *Room
-	Room2 *Room
+    Room1 *Room
+    Room2 *Room
 }
 
 type Path struct {
-	Rooms []*Room
-	Shortest []Path
+    Rooms    []*Room
+    Shortest []Path
+    Queue    []*Ant
+    NumNamlaty int
 }
-
-//paths must be same number as links from the start
-//filter the shortest path
-
-
-//error handling when ants = 0
-//make the ants and move them 
