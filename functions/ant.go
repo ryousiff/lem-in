@@ -1,38 +1,27 @@
 package lem
 
-func AssignAnts(farm *Farm) {
-    antIndex := 1
-    currentPath := 0
+func DistributeAnts(farm *Farm) {
+    for i := 1; i <= farm.NumAnt; i++ {
+        ant := &Ant{ID: i, CurrentRoom: farm.StartRoom}
+        farm.Ants = append(farm.Ants, ant)
 
-    for antIndex <= farm.NumAnt {
-        if currentPath >= len(farm.Paths) {
-            currentPath = 0
-        }
+        // Find the path with the least total "cost"
+        minCost := len(farm.Paths[0].Rooms) + len(farm.Paths[0].Ants) //num of rooms in a path + num of ants in a path
+        minPath := farm.Paths[0]
 
-        lowestCostPath := farm.Paths[currentPath]
-        lowestCost := cost(lowestCostPath)
-
-        for i, path := range farm.Paths {
-            if cost(path) < lowestCost {
-                lowestCostPath = path
-                lowestCost = cost(path)
-                currentPath = i
+        for _, path := range farm.Paths[1:] {
+            cost := len(path.Rooms) + len(path.Ants)
+            if cost < minCost {
+                minCost = cost
+                minPath = path
             }
         }
 
-        ant := &Ant{
-            ID:          antIndex,
-            Path:        &lowestCostPath,
-            CurrentRoom: lowestCostPath.Rooms[0],
-        }
-        farm.Ants = append(farm.Ants, ant)
-        lowestCostPath.Queue = append(lowestCostPath.Queue, ant)
-        lowestCostPath.NumNamlaty++
-        antIndex++
-        currentPath++
+        // Assign the ant to the path with the least cost
+        minPath.Ants = append(minPath.Ants, ant)
     }
 }
 
-func cost(path Path) int {
-    return len(path.Rooms) + path.NumNamlaty
-}
+//cost is used to choose the best path 
+//cost equation len(path) + len(ant)
+//we choose the min cost path

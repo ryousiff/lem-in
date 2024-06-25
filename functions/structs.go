@@ -10,6 +10,7 @@ type Room struct {
     Links     []*Link
     Neighbors []*Room
     LineNum   int
+    Ants      []*Ant
 }
 
 type Ant struct {
@@ -18,18 +19,18 @@ type Ant struct {
     CurrentRoom *Room
 }
 
-type Farm struct {
-    Rooms         []*Room
-    Ants          []*Ant
-    Links         []*Link
-    NumAnt        int
-    StartRoom     *Room
-    EndRoom       *Room
-    AntPositions  map[int]*Room
-    Paths         []Path
-    StartRoomLine int
-    EndRoomLine   int
-}
+// type Farm struct {
+//     Rooms         []*Room
+//     Ants          []*Ant
+//     Links         []*Link
+//     NumAnt        int
+//     StartRoom     *Room
+//     EndRoom       *Room
+//     AntPositions  map[int]*Room
+//     Paths         []Path
+//     StartRoomLine int
+//     EndRoomLine   int
+// }
 
 type Link struct {
     Room1 *Room
@@ -41,4 +42,22 @@ type Path struct {
     Shortest []Path
     Queue    []*Ant
     NumNamlaty int
+    Skip       bool
+    Steps      int  // Add this field
+    Ants       []*Ant  // Add this field
 }
+
+
+type Farm struct {
+    Rooms         []*Room
+    Ants          []*Ant
+    Links         []*Link
+    NumAnt        int
+    StartRoom     *Room
+    EndRoom       *Room
+    AntPositions  map[int]*Room
+    Paths         []*Path
+    StartRoomLine int
+    EndRoomLine   int
+}
+

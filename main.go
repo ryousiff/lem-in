@@ -1,15 +1,14 @@
 package main
 
 import (
-    "fmt"
     lem "lem/functions"
+    "fmt"
     "os"
-    "sort"
 )
 
 func main() {
     if len(os.Args) != 2 {
-        fmt.Println("Usage: lem <input-file>")
+        fmt.Println("Usage: go run main.go <filename>")
         return
     }
 
@@ -20,27 +19,35 @@ func main() {
         return
     }
 
-    // Find paths from the start room to the end room using Edmonds algorithm
+    // Print the farm configuration (this echoes the input)
+    inputText := lem.PrintFarmConfiguration(farm)
+    fmt.Print(inputText)
+    fmt.Println()
+
+    // Find all possible routes from start to end
     paths := lem.Edmonds(farm)
-
-    // Sort paths by length to find the quickest paths
-    sort.Slice(paths, func(i, j int) bool {
-        return len(paths[i].Rooms) < len(paths[j].Rooms)
-    })
-
-    // Choose the optimal paths using the ChooseOptimalPaths function
-    optimalPaths := lem.ChooseOptimalPaths(paths, farm.StartRoom)
-
-    // Print the optimal paths found
-    fmt.Println("Optimal Paths:")
-    for _, path := range optimalPaths {
-        fmt.Print("path: ")
-        for j, room := range path.Rooms {
-            if j > 0 {
-                fmt.Print(" -> ")
-            }
-            fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
-        }
-        fmt.Println()
+    if len(paths) == 0 {
+        fmt.Printf("ERROR: invalid data format\nNo path from start room to end room\n")
+        return
     }
+
+    // Remove redundant paths (longer routes)
+    paths = lem.RemoveParents(paths)
+
+    // Choose optimal paths
+    farm.Paths = lem.ChooseOptimalPaths(paths, farm.StartRoom)
+
+    // Distribute ants to paths
+    lem.DistributeAnts(farm)
+
+    // Simulate ant movements
+    movements := lem.SimulateAntsMovement(farm)
+
+    // Print the movements
+    for _, move := range movements {
+        if move != "" {
+            fmt.Println(move)
+        }
+    }
+    fmt.Println("$")
 }

@@ -1,21 +1,24 @@
 package lem
 
 import (
-    "fmt"
     "math"
+    "fmt"
 )
 
+// Edmonds function finds all possible paths from the start room to the end room in the farm.
 func Edmonds(farm *Farm) []*Path {
-    start := []*Room{farm.StartRoom}
-    end := farm.EndRoom
-    queue := []*Path{{Rooms: start}}
-    var paths []*Path
+    start := []*Room{farm.StartRoom} // Initialize the start room
+    end := farm.EndRoom // Initialize the end room
+    queue := []*Path{{Rooms: start}} // Initialize the queue with the start room
+    var paths []*Path // Slice to store all found paths
 
+    // Breadth-First Search (BFS) to find all paths
     for len(queue) > 0 {
-        path := queue[0]
-        queue = queue[1:]
-        currentRoom := path.Rooms[len(path.Rooms)-1]
+        path := queue[0] // Get the first path in the queue
+        queue = queue[1:] // Remove the first path from the queue
+        currentRoom := path.Rooms[len(path.Rooms)-1] // Get the last room in the current path
 
+        // If the current room is the end room, add the path to the paths slice
         if currentRoom == end {
             newPath := &Path{Rooms: make([]*Room, len(path.Rooms))}
             copy(newPath.Rooms, path.Rooms)
@@ -23,11 +26,13 @@ func Edmonds(farm *Farm) []*Path {
             continue
         }
 
+        // Explore all links from the current room
         for _, link := range currentRoom.Links {
             nextRoom := link.Room2
             if nextRoom == currentRoom {
                 nextRoom = link.Room1
             }
+            // If the next room is not already in the current path, add it to the new path
             if !containsRoom(path.Rooms, nextRoom) {
                 newPath := &Path{Rooms: make([]*Room, len(path.Rooms), len(path.Rooms)+1)}
                 copy(newPath.Rooms, path.Rooms)
@@ -37,22 +42,10 @@ func Edmonds(farm *Farm) []*Path {
         }
     }
 
-    // Debugging: Print all paths found
-    fmt.Println("All Paths Found by Edmonds:")
-    for _, path := range paths {
-        fmt.Print("path: ")
-        for j, room := range path.Rooms {
-            if j > 0 {
-                fmt.Print(" -> ")
-            }
-            fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
-        }
-        fmt.Println()
-    }
-
     return paths
 }
 
+// ChooseOptimalPaths function selects the optimal paths from the list of all found paths.
 func ChooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
     // Remove redundant paths
     paths = RemoveParents(paths)
@@ -63,22 +56,6 @@ func ChooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
         if len(path.Rooms) > 1 {
             secondRoom := path.Rooms[1]
             groups[secondRoom] = append(groups[secondRoom], path)
-        }
-    }
-
-    // Debugging: Print groups of paths
-    fmt.Println("Groups of Paths by Second Room:")
-    for room, group := range groups {
-        fmt.Printf("Room: %s\n", room.Name)
-        for _, path := range group {
-            fmt.Print("  path: ")
-            for j, room := range path.Rooms {
-                if j > 0 {
-                    fmt.Print(" -> ")
-                }
-                fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
-            }
-            fmt.Println()
         }
     }
 
@@ -147,22 +124,10 @@ func ChooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
         filteredPaths = append(filteredPaths, selectedPath)
     }
 
-    // Debugging: Print filtered paths
-    fmt.Println("Filtered Optimal Paths:")
-    for _, path := range filteredPaths {
-        fmt.Print("path: ")
-        for j, room := range path.Rooms {
-            if j > 0 {
-                fmt.Print(" -> ")
-            }
-            fmt.Printf("%s (%s, %s)", room.Name, room.CoordX, room.CoordY)
-        }
-        fmt.Println()
-    }
-
     return filteredPaths
 }
 
+// RemoveParents function removes redundant paths that are subsets of other paths.
 func RemoveParents(paths []*Path) []*Path {
     for i := 0; i < len(paths); i++ {
         for j := i + 1; j < len(paths); j++ {
@@ -175,6 +140,7 @@ func RemoveParents(paths []*Path) []*Path {
     return paths
 }
 
+// numOfSameRooms function counts the number of rooms that are the same in two routes.
 func numOfSameRooms(route1, route2 []*Room) int {
     count := 0
     for _, room1 := range route1 {
@@ -187,6 +153,7 @@ func numOfSameRooms(route1, route2 []*Room) int {
     return count
 }
 
+// hasSharedRooms function checks if two paths share any rooms other than the start and end rooms.
 func hasSharedRooms(path1, path2 *Path) bool {
     rooms1 := make(map[*Room]bool)
     for _, room := range path1.Rooms {
@@ -206,6 +173,7 @@ func hasSharedRooms(path1, path2 *Path) bool {
     return false
 }
 
+// contains function checks if a path is in a slice of paths.
 func contains(paths []*Path, path *Path) bool {
     for _, p := range paths {
         if p == path {
@@ -215,6 +183,7 @@ func contains(paths []*Path, path *Path) bool {
     return false
 }
 
+// containsRoom function checks if a room is in a slice of rooms.
 func containsRoom(rooms []*Room, room *Room) bool {
     for _, r := range rooms {
         if r == room {
@@ -222,4 +191,23 @@ func containsRoom(rooms []*Room, room *Room) bool {
         }
     }
     return false
+}
+
+
+func PrintFarmConfiguration(farm *Farm) string {
+    var result string
+    result += fmt.Sprintf("%d\n", farm.NumAnt)
+    for _, room := range farm.Rooms {
+        if room.IsStart {
+            result += "##start\n"
+        }
+        if room.IsEnd {
+            result += "##end\n"
+        }
+        result += fmt.Sprintf("%s %s %s\n", room.Name, room.CoordX, room.CoordY)
+    }
+    for _, link := range farm.Links {
+        result += fmt.Sprintf("%s-%s\n", link.Room1.Name, link.Room2.Name)
+    }
+    return result
 }
