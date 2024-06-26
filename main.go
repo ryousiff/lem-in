@@ -15,7 +15,7 @@ func main() {
     // Parse the farm from the input file
     farm := lem.File(os.Args[1])
     if farm == nil {
-        fmt.Println("Failed to parse farm from input file.")
+        // fmt.Println("Failed to parse farm from input file.")
         return
     }
 

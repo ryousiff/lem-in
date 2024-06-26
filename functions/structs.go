@@ -42,8 +42,8 @@ type Path struct {
     Shortest []Path
     Queue    []*Ant
     NumNamlaty int
-    Skip       bool
-    Steps      int  // Add this field
+    // Skip       bool
+    // Steps      int  // Add this field
     Ants       []*Ant  // Add this field
 }
 
@@ -61,3 +61,7 @@ type Farm struct {
     EndRoomLine   int
 }
 
+
+
+//no # no L and have no spaces
+//tunnel for a room that is not here
