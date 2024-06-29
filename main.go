@@ -15,7 +15,7 @@ func main() {
     // Parse the farm from the input file
     farm := lem.File(os.Args[1])
     if farm == nil {
-        // fmt.Println("Failed to parse farm from input file.")
+        fmt.Println("Failed to parse farm from input file.")
         return
     }
 
@@ -31,11 +31,8 @@ func main() {
         return
     }
 
-    // Remove redundant paths (longer routes)
-    paths = lem.RemoveParents(paths)
-
     // Choose optimal paths
-    farm.Paths = lem.ChooseOptimalPaths(paths, farm.StartRoom)
+    farm.Paths = lem.ChooseOptimalPaths(paths, farm.NumAnt)
 
     // Distribute ants to paths
     lem.DistributeAnts(farm)

@@ -1,212 +1,171 @@
 package lem
 
 import (
-	"fmt"
-	"math"
+    "fmt"
+    "math"
+    "sort"
 )
 
 // Edmonds function finds all possible paths from the start room to the end room in the farm.
 func Edmonds(farm *Farm) []*Path {
-	start := []*Room{farm.StartRoom} // Initialize the start room
-	end := farm.EndRoom              // Initialize the end room
-	queue := []*Path{{Rooms: start}} // Initialize the queue with the start room
-	var paths []*Path                // Slice to store all found paths
+    start := []*Room{farm.StartRoom}
+    end := farm.EndRoom
+    queue := []*Path{{Rooms: start}} //queue a slice of path poniters with a path containing the start room 
+    var paths []*Path
 
-	// Breadth-First Search (BFS) to find all paths
-	for len(queue) > 0 {
-		path := queue[0]                             // Get the first path in the queue
-		queue = queue[1:]                            // Remove the first path from the queue
-		currentRoom := path.Rooms[len(path.Rooms)-1] // Get the last room in the current path
+    for len(queue) > 0 { //loop till the queue is empty
+        path := queue[0] //gets first path
+        queue = queue[1:] //updates the queue with removing the first one
+        currentRoom := path.Rooms[len(path.Rooms)-1] // gets last room in the path
 
-		// If the current room is the end room, add the path to the paths slice
-		if currentRoom == end {
-			newPath := &Path{Rooms: make([]*Room, len(path.Rooms))}
-			copy(newPath.Rooms, path.Rooms)
-			paths = append(paths, newPath)
-			continue
-		}
+        if currentRoom == end { // checks if the room is the last room
+            newPath := &Path{Rooms: append([]*Room(nil), path.Rooms...)} //save the path it to the struct
+            paths = append(paths, newPath)
+            continue //skips to next itteration since a complete path has been found
+        }
 
-		// Explore all links from the current room
-		for _, link := range currentRoom.Links {
-			nextRoom := link.Room2
-			if nextRoom == currentRoom {
-				nextRoom = link.Room1
-			}
-			// If the next room is not already in the current path, add it to the new path
-			if !containsRoom(path.Rooms, nextRoom) {
-				newPath := &Path{Rooms: make([]*Room, len(path.Rooms), len(path.Rooms)+1)}
-				copy(newPath.Rooms, path.Rooms)
-				newPath.Rooms = append(newPath.Rooms, nextRoom)
-				queue = append(queue, newPath)
-			}
-		}
-	}
-
-	return paths
+        for _, link := range currentRoom.Links { //finds all links from current room
+            nextRoom := link.Room2 //gets the next room in the link
+            if nextRoom == currentRoom { //make sure next room isnt the current room
+                nextRoom = link.Room1
+            }
+            if !containsRoom(path.Rooms, nextRoom) { //ensure that the next room the linked one is not already in a path
+                newPath := &Path{Rooms: append(append([]*Room(nil), path.Rooms...), nextRoom)}
+                queue = append(queue, newPath)
+            }
+        }
+    }
+    return paths
 }
 
 // ChooseOptimalPaths function selects the optimal paths from the list of all found paths.
-func ChooseOptimalPaths(paths []*Path, startRoom *Room) []*Path {
-	// Remove redundant paths
-	paths = RemoveParents(paths)
+func ChooseOptimalPaths(paths []*Path, numAnts int) []*Path {
+    applyFindMaxFlow(paths)
 
-	// Group paths by their second room
-	groups := make(map[*Room][]*Path)
-	for _, path := range paths {
-		if len(path.Rooms) > 1 {
-			secondRoom := path.Rooms[1]
-			groups[secondRoom] = append(groups[secondRoom], path)
-		}
-	}
+    var filteredPaths []*Path
+    for _, path := range paths {
+        if !path.Skip {
+            filteredPaths = append(filteredPaths, path)
+        }
+    }
 
-	// Find the optimal path for each group
-	var optimalPaths []*Path
-	for _, pathsInGroup := range groups {
-		minSharedRooms := math.MaxFloat64
-		minPathLength := math.MaxFloat64
-		var optimalPath *Path
+    sort.Slice(filteredPaths, func(i, j int) bool {
+        return len(filteredPaths[i].Rooms) < len(filteredPaths[j].Rooms)
+    })
 
-		for _, path := range pathsInGroup {
-			sharedRooms := 0.0
-			for _, otherPaths := range groups {
-				if &otherPaths != &pathsInGroup {
-					for _, otherPath := range otherPaths {
-						if hasSharedRooms(path, otherPath) {
-							sharedRooms++
-							break
-						}
-					}
-				}
-			}
+    var optimalPaths []*Path
+    minSteps := math.MaxInt32
 
-			pathLength := float64(len(path.Rooms))
-
-			if sharedRooms < minSharedRooms || (sharedRooms == minSharedRooms && pathLength < minPathLength) {
-				minSharedRooms = sharedRooms
-				minPathLength = pathLength
-				optimalPath = path
-			}
-		}
-
-		optimalPaths = append(optimalPaths, optimalPath)
-	}
-
-	// Filter optimalPaths to choose one path that has the shortest length between paths that have shared rooms with other paths in other groups
-	var filteredPaths []*Path
-	for _, path := range optimalPaths {
-		hasSharedRoomsWithOthers := false
-		for _, otherPath := range optimalPaths {
-			if path != otherPath && hasSharedRooms(path, otherPath) {
-				hasSharedRoomsWithOthers = true
-				break
-			}
-		}
-
-		if !hasSharedRoomsWithOthers {
-			filteredPaths = append(filteredPaths, path)
-		}
-	}
-
-	if len(filteredPaths) < len(optimalPaths) {
-		minPathLength := math.Inf(1)
-		var selectedPath *Path
-
-		for _, path := range optimalPaths {
-			if !contains(filteredPaths, path) {
-				pathLength := float64(len(path.Rooms))
-				if pathLength < minPathLength {
-					minPathLength = pathLength
-					selectedPath = path
-				}
-			}
-		}
-
-		filteredPaths = append(filteredPaths, selectedPath)
-	}
-
-	return filteredPaths
+    for i := 1; i <= len(filteredPaths); i++ {
+        selectedPaths := filteredPaths[:i]
+        steps := calculateSteps(selectedPaths, numAnts)
+        if steps < minSteps {
+            minSteps = steps
+            optimalPaths = selectedPaths
+        }
+    }
+    return optimalPaths
 }
 
-// RemoveParents function removes redundant paths that are subsets of other paths.
-func RemoveParents(paths []*Path) []*Path {
-	for i := 0; i < len(paths); i++ {
-		for j := i + 1; j < len(paths); j++ {
-			if len(paths[i].Rooms) != 2 && numOfSameRooms(paths[i].Rooms, paths[j].Rooms) == len(paths[i].Rooms) {
-				paths = append(paths[:j], paths[j+1:]...)
-				j--
-			}
-		}
-	}
-	return paths
+// applyFindMaxFlow applies the FindMaxFlow logic to skip paths with shared rooms.
+func applyFindMaxFlow(paths []*Path) {
+    linkedTo := make([][]int, len(paths))
+    for i := range linkedTo {
+        linkedTo[i] = make([]int, len(paths))
+    }
+
+    for i := range paths {
+        if paths[i].Skip {
+            continue
+        }
+        for j := i + 1; j < len(paths); j++ {
+            if paths[j].Skip {
+                continue
+            }
+            if numOfSameRooms(paths[i].Rooms, paths[j].Rooms) > 2 {
+                linkedTo[i][j] = 1
+                linkedTo[j][i] = 1
+            }
+        }
+    }
+
+    maxSimilarity, maxPath := 0, -1
+    for i := len(linkedTo) - 1; i >= 0; i-- {
+        sumConnections := 0
+        for _, conn := range linkedTo[i] {
+            sumConnections += conn
+        }
+        if sumConnections > maxSimilarity {
+            maxSimilarity = sumConnections
+            maxPath = i
+        }
+    }
+
+    if maxSimilarity != 0 {
+        paths[maxPath].Skip = true
+        applyFindMaxFlow(paths)
+    }
+}
+
+// calculateSteps calculates the total number of steps required to move all ants using the given paths.
+func calculateSteps(paths []*Path, numAnts int) int {
+    maxPathLength := 0
+    for _, path := range paths {
+        if len(path.Rooms) > maxPathLength {
+            maxPathLength = len(path.Rooms)
+        }
+    }
+
+    totalSteps, remainingAnts := 0, numAnts
+    for remainingAnts > 0 {
+        totalSteps++
+        for range paths {
+            if remainingAnts > 0 {
+                remainingAnts--
+            }
+        }
+    }
+    return totalSteps + maxPathLength - 1
 }
 
 // numOfSameRooms function counts the number of rooms that are the same in two routes.
 func numOfSameRooms(route1, route2 []*Room) int {
-	count := 0
-	for _, room1 := range route1 {
-		for _, room2 := range route2 {
-			if room1 == room2 {
-				count++
-			}
-		}
-	}
-	return count
-}
-
-// hasSharedRooms function checks if two paths share any rooms other than the start and end rooms.
-func hasSharedRooms(path1, path2 *Path) bool {
-	rooms1 := make(map[*Room]bool)
-	for _, room := range path1.Rooms {
-		if room != path1.Rooms[0] && room != path1.Rooms[len(path1.Rooms)-1] {
-			rooms1[room] = true
-		}
-	}
-
-	for _, room := range path2.Rooms {
-		if room != path2.Rooms[0] && room != path2.Rooms[len(path2.Rooms)-1] {
-			if rooms1[room] {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// contains function checks if a path is in a slice of paths.
-func contains(paths []*Path, path *Path) bool {
-	for _, p := range paths {
-		if p == path {
-			return true
-		}
-	}
-	return false
+    count := 0
+    for _, room1 := range route1 {
+        for _, room2 := range route2 {
+            if room1 == room2 {
+                count++
+            }
+        }
+    }
+    return count
 }
 
 // containsRoom function checks if a room is in a slice of rooms.
 func containsRoom(rooms []*Room, room *Room) bool {
-	for _, r := range rooms {
-		if r == room {
-			return true
-		}
-	}
-	return false
+    for _, r := range rooms {
+        if r == room {
+            return true
+        }
+    }
+    return false
 }
 
+// PrintFarmConfiguration prints the farm configuration.
 func PrintFarmConfiguration(farm *Farm) string {
-	var result string
-	result += fmt.Sprintf("%d\n", farm.NumAnt)
-	for _, room := range farm.Rooms {
-		if room.IsStart {
-			result += "##start\n"
-		}
-		if room.IsEnd {
-			result += "##end\n"
-		}
-		result += fmt.Sprintf("%s %s %s\n", room.Name, room.CoordX, room.CoordY)
-	}
-	for _, link := range farm.Links {
-		result += fmt.Sprintf("%s-%s\n", link.Room1.Name, link.Room2.Name)
-	}
-	return result
+    var result string
+    result += fmt.Sprintf("%d\n", farm.NumAnt)
+    for _, room := range farm.Rooms {
+        if room.IsStart {
+            result += "##start\n"
+        }
+        if room.IsEnd {
+            result += "##end\n"
+        }
+        result += fmt.Sprintf("%s %s %s\n", room.Name, room.CoordX, room.CoordY)
+    }
+    for _, link := range farm.Links {
+        result += fmt.Sprintf("%s-%s\n", link.Room1.Name, link.Room2.Name)
+    }
+    return result
 }

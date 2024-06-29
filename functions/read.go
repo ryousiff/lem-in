@@ -74,13 +74,7 @@ func File(file string) *Farm {
     }
 
     if farm.StartRoom == nil || farm.EndRoom == nil {
-        fmt.Println("ERROR: invalid data format\n")
-        return nil
-    }
-
-    // Check if start and end rooms are linked
-    if !areRoomsLinked(farm.StartRoom, farm.EndRoom) {
-        fmt.Println("ERROR: invalid data format\n")
+        fmt.Println("ERROR: invalid data format, no start or end room found")
         return nil
     }
 
@@ -104,18 +98,11 @@ func handleSingleField(farm *Farm, line string, lineNum int) {
 func NewRoom(line string, lineNum int) *Room {
     fields := strings.Fields(line)
     if len(fields) != 3 {
-        fmt.Printf("ERROR: invalid data format\n")
+        fmt.Printf("ERROR: invalid data format on line %d: %s\n", lineNum, line)
         return nil
     }
-
 
     name := fields[0]
-
-    if name == "#" || name == "L" || name == " " {
-        fmt.Printf("ERROR: invalid data format\n")
-        return nil
-    }
-
     coordX := fields[1]
     coordY := fields[2]
 
@@ -123,7 +110,7 @@ func NewRoom(line string, lineNum int) *Room {
     _, errX := strconv.Atoi(coordX)
     _, errY := strconv.Atoi(coordY)
     if errX != nil || errY != nil {
-        fmt.Printf("ERROR: invalid data format\n")
+        fmt.Printf("ERROR: invalid data format on line %d: %s\n", lineNum, line)
         return nil
     }
 
@@ -144,7 +131,7 @@ func NewRoom(line string, lineNum int) *Room {
 func NewLink(line string, lineNum int, farm *Farm) *Link {
     linkSplit := strings.Split(line, "-")
     if len(linkSplit) != 2 {
-        fmt.Printf("ERROR: invalid data format\n")
+        fmt.Printf("ERROR: invalid data format on line %d: %s\n", lineNum, line)
         return nil
     }
 
@@ -155,10 +142,10 @@ func NewLink(line string, lineNum int, farm *Farm) *Link {
     room2 := findRoomByName(roomName2, farm.Rooms)
 
     if room1 == nil || room2 == nil {
-        fmt.Printf("ERROR: invalid data format\n")
+        fmt.Printf("ERROR: invalid data format, invalid room name(s) on line %d: %s\n", lineNum, line)
         return nil
     } else if room1 == room2 {
-        fmt.Printf("ERROR: invalid data format\n")
+        fmt.Printf("ERROR: invalid data format, link to itself on line %d: %s\n", lineNum, line)
         return nil
     }
 
@@ -177,13 +164,4 @@ func findRoomByName(name string, rooms []*Room) *Room {
         }
     }
     return nil
-}
-
-func areRoomsLinked(room1, room2 *Room) bool {
-    for _, link := range room1.Links {
-        if link.Room1 == room2 || link.Room2 == room2 {
-            return true
-        }
-    }
-    return false
 }
