@@ -12,33 +12,6 @@ Rooms: Each room is defined by a line in the format name coord_x coord_y. The ##
 Links: Each link is defined by a line in the format name1-name2.
 Comments: Lines starting with # are comments and should be ignored unless they specify ##start or ##end.
 
-Example Input
-3
-##start
-1 23 3
-2 16 7
-#comment
-3 16 3
-4 16 5
-5 9 3
-6 1 5
-7 4 8
-##end
-0 9 5
-0-4
-0-6
-1-3
-4-3
-5-2
-3-5
-#another comment
-4-2
-2-1
-7-6
-7-2
-7-4
-6-5
-
 # Usage
 To run the program:
 $ go run . <input_file>
