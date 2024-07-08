@@ -12,7 +12,7 @@ Rooms: Each room is defined by a line in the format name coord_x coord_y. The ##
 Links: Each link is defined by a line in the format name1-name2.
 Comments: Lines starting with # are comments and should be ignored unless they specify ##start or ##end.
 
-# Example Input
+Example Input
 3
 ##start
 1 23 3
